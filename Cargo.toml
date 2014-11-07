@@ -1,0 +1,6 @@
+[package]
+
+name = "wayland"
+version = "0.0.1"
+authors = ["Jon Eyolfson <jon@eyl.io>"]
+license = "MIT"
