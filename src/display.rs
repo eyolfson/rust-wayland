@@ -17,8 +17,9 @@ impl Display {
         }
     }
     pub fn connect(name: &str) -> Display {
+        let c_str = name.to_c_str();
         unsafe {
-            let ptr = raw::wl_display_connect(name.as_ptr() as *const i8);
+            let ptr = raw::wl_display_connect(c_str.as_ptr());
             assert!(!ptr.is_null(), "wl_display_connect failed");
             Display { ptr: ptr }
         }
