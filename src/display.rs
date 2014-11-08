@@ -50,14 +50,14 @@ impl Display {
     pub fn dispatch(&mut self) -> i32 {
         unsafe {
             let r = raw::wl_display_dispatch(self.ptr);
-            assert!(r != -1);
+            assert!(r != -1, "wl_display_dispatch failed");
             r
         }
     }
     pub fn flush(&mut self) -> i32 {
         unsafe {
             let r = raw::wl_display_flush(self.ptr);
-            assert!(r != -1);
+            assert!(r != -1, "wl_display_flush failed");
             r
         }
     }
