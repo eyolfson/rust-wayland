@@ -9,32 +9,59 @@ pub struct Display {
 }
 
 impl Display {
-    pub fn new() -> Display {
+    pub fn connect_to_env_or_default() -> Display {
         unsafe {
             let ptr = raw::wl_display_connect(ptr::null());
-            assert!(!ptr.is_null());
+            assert!(!ptr.is_null(), "wl_display_connect failed");
             Display { ptr: ptr }
         }
     }
+    pub fn connect(name: &str) -> Display {
+        unsafe {
+            let ptr = raw::wl_display_connect(name.as_ptr() as *const i8);
+            assert!(!ptr.is_null(), "wl_display_connect failed");
+            Display { ptr: ptr }
+        }
+    }
+    pub fn roundtrip(&mut self) -> i32 {
+        unsafe {
+            let r = raw::wl_display_roundtrip(self.ptr);
+            assert!(r != -1, "wl_display_roundtrip failed");
+            r
+        }
+    }
+    pub fn read_events(&mut self) {
+        unsafe {
+            let r = raw::wl_display_read_events(self.ptr);
+            assert!(r != -1, "wl_display_read_events failed");
+        }
+    }
+    pub fn prepare_read(&mut self) {
+        unsafe {
+            let r = raw::wl_display_prepare_read(self.ptr);
+            assert!(r != -1, "wl_display_prepare_read failed");
+        }
+    }
+    pub fn cancel_read(&mut self) {
+        unsafe {
+            raw::wl_display_cancel_read(self.ptr);
+        }
+    }
+    pub fn dispatch(&mut self) -> i32 {
+        unsafe {
+            let r = raw::wl_display_dispatch(self.ptr);
+            assert!(r != -1);
+            r
+        }
+    }
+    pub fn flush(&mut self) -> i32 {
+        unsafe {
+            let r = raw::wl_display_flush(self.ptr);
+            assert!(r != -1);
+            r
+        }
+    }
     pub unsafe fn to_ptr(&mut self) -> *mut raw::wl_display { self.ptr }
-    pub fn dispatch(&mut self) {
-        unsafe {
-            let ret = raw::wl_display_dispatch(self.ptr);
-            assert!(ret >= 0);
-        }
-    }
-    pub fn roundtrip(&mut self) {
-        unsafe {
-            let ret = raw::wl_display_roundtrip(self.ptr);
-            assert!(ret >= 0);
-        }
-    }
-    pub fn flush(&mut self) {
-        unsafe {
-            let ret = raw::wl_display_flush(self.ptr);
-            assert!(ret >= 0);
-        }
-    }
 }
 
 impl Drop for Display {
