@@ -57,6 +57,12 @@ impl ShellSurface {
         );
         ShellSurface { ptr: ptr }
     }
+    pub fn set_title(&mut self, title: &str) {
+        let c_str = title.to_c_str();
+        unsafe {
+            raw::wl_shell_surface_set_title(self.ptr, c_str.as_ptr());
+        }
+    }
     pub fn set_toplevel(&mut self) {
         unsafe {
             raw::wl_shell_surface_set_toplevel(self.ptr);

@@ -96,11 +96,10 @@ extern fn global_remove(
     unimplemented!();
 }
 
-static REGISTRY_LISTENER: raw::wl_registry_listener =
-    raw::wl_registry_listener {
-        global: global,
-        global_remove: global_remove
-    };
+static LISTENER: raw::wl_registry_listener = raw::wl_registry_listener {
+    global: global,
+    global_remove: global_remove
+};
 
 impl Registry {
     pub fn new(display: &mut Display) -> Registry {
@@ -115,7 +114,7 @@ impl Registry {
             };
             raw::wl_registry_add_listener(
                 ptr,
-                &REGISTRY_LISTENER,
+                &LISTENER,
                 mem::transmute(&mut r)
             );
             display.roundtrip();
