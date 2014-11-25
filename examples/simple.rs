@@ -1,13 +1,12 @@
 // Copyright 2014 Jonathan Eyolfson
 
+#![feature(asm)]
+
 extern crate wayland;
 
 extern crate libc;
 
 use std::ptr;
-
-#[link(name = "rt")]
-extern { }
 
 const WIDTH: i32 = 300;
 const HEIGHT: i32 = 200;
@@ -15,19 +14,21 @@ const STRIDE: i32 = WIDTH * 4;
 const PIXELS: i32 = WIDTH * HEIGHT;
 const SIZE: i32 = PIXELS * 4;
 
-struct ShmFd {
+struct Block {
     fd: i32,
     ptr: *mut libc::c_void
 }
 
-impl ShmFd {
-    pub fn new() -> ShmFd {
+impl Block {
+    pub fn new() -> Block {
         unsafe {
-            let fd = libc::funcs::posix88::mman::shm_open(
-                "/eyl-hello-world".to_c_str().as_ptr(),
-                libc::O_CREAT | libc::O_RDWR,
-                libc::S_IRUSR | libc::S_IWUSR
-            );
+            let mut fd: i32;
+            let name = b"rust-wayland-shm\x00";
+            asm!("syscall"
+                 : "={rax}"(fd)
+                 : "{rax}"(319u), "{rdi}"(name.as_ptr()), "{rsi}"(3u)
+                 : "rcx", "r11", "memory"
+                 : "volatile");
             assert!(fd >= 0);
             assert!(libc::ftruncate(fd, SIZE as i64) != -1);
             let ptr = libc::mmap(ptr::null_mut(), SIZE as u64,
@@ -47,7 +48,7 @@ impl ShmFd {
                     }
                 }
             }
-            ShmFd { fd: fd, ptr: ptr }
+            Block { fd: fd, ptr: ptr }
         }
     }
     pub fn fd(&self) -> i32 {
@@ -55,13 +56,11 @@ impl ShmFd {
     }
 }
 
-impl Drop for ShmFd {
+impl Drop for Block {
     fn drop(&mut self) {
         unsafe {
             libc::munmap(self.ptr, SIZE as u64);
-            libc::funcs::posix88::mman::shm_unlink(
-                "/eyl-hello-world".to_c_str().as_ptr()
-            );
+            libc::close(self.fd);
         }
     }
 }
@@ -69,8 +68,8 @@ impl Drop for ShmFd {
 fn main() {
     let mut display = wayland::Display::connect_to_env_or_default();
     let mut registry = wayland::Registry::new(&mut display);
-    let shm_fd = ShmFd::new();
-    let mut pool = registry.shm().create_pool(shm_fd.fd(), SIZE);
+    let block = Block::new();
+    let mut pool = registry.shm().create_pool(block.fd(), SIZE);
     let mut surface = registry.compositor().create_surface();
     let mut buffer = pool.create_buffer(
         0, WIDTH, HEIGHT, STRIDE, wayland::raw::WL_SHM_FORMAT_ARGB8888
