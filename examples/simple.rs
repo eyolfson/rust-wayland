@@ -9,12 +9,20 @@ extern crate libc;
 use std::ptr;
 
 static SYSCALL_MEMFD_CREATE: u32 = 319;
+
 static MFD_CLOEXEC: u32 = 1;
 static MFD_ALLOW_SEALING: u32 = 2;
 
-// const WIDTH: i32 = 300;
-// const HEIGHT: i32 = 200;
-// const STRIDE: i32 = WIDTH * 4;
+unsafe fn memfd_create(name: *const u8, flags: u32) -> i32 {
+    let mut fd: i32;
+    asm!("syscall"
+        : "={rax}"(fd)
+        : "{rax}"(SYSCALL_MEMFD_CREATE), "{rdi}"(name), "{rsi}"(flags)
+        : "rcx", "r11", "memory"
+        : "volatile"
+    );
+    fd
+}
 
 struct ShmBuffer {
     fd: i32,
@@ -27,16 +35,8 @@ struct ShmBuffer {
 impl ShmBuffer {
     pub fn new() -> ShmBuffer {
         unsafe {
-            let mut fd: i32;
             let name = b"rust-wayland-shm\x00";
-            asm!("syscall"
-                : "={rax}"(fd)
-                 : "{rax}"(SYSCALL_MEMFD_CREATE),
-                   "{rdi}"(name.as_ptr()),
-                   "{rsi}"(MFD_CLOEXEC | MFD_ALLOW_SEALING)
-                : "rcx", "r11", "memory"
-                : "volatile"
-            );
+            let fd = memfd_create(name.as_ptr(), MFD_CLOEXEC | MFD_ALLOW_SEALING);
             assert!(fd >= 0);
             let width = 300i32;
             let height = 200i32;
@@ -100,17 +100,19 @@ impl Drop for ShmBuffer {
 fn main() {
     let mut display = wayland::Display::connect_to_env_or_default();
     let mut registry = wayland::Registry::new(&mut display);
+    // Create the shell surface
+    let mut surface = registry.compositor().create_surface();
+    let mut shell_surface = registry.shell().get_shell_surface(&mut surface);
+    shell_surface.set_toplevel();
+    // Create the buffer
     let mut shm_buffer = ShmBuffer::new();
     shm_buffer.resize(300, 200);
     let mut pool = registry.shm().create_pool(shm_buffer.fd(),
                                               shm_buffer.capacity() as i32);
-    let mut surface = registry.compositor().create_surface();
     let mut buffer = pool.create_buffer(
         0, shm_buffer.width(), shm_buffer.height(), shm_buffer.stride(),
         wayland::raw::WL_SHM_FORMAT_ARGB8888
     );
-    let mut shell_surface = registry.shell().get_shell_surface(&mut surface);
-    shell_surface.set_toplevel();
     surface.attach(&mut buffer, 0, 0);
     surface.commit();
     loop {
