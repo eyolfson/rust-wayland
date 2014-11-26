@@ -26,7 +26,7 @@ extern fn configure(
     width: int32_t,
     height: int32_t
 ) {
-    println!("wl_shell_surface.configure");
+    println!("wl_shell_surface.configure: {}, {}, {}", edges, width, height);
 }
 
 #[allow(unused_variables)]
