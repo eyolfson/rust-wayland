@@ -7,11 +7,21 @@ extern crate wayland;
 extern crate libc;
 
 use std::ptr;
+use std::io::{IoError, IoResult};
 
-static SYSCALL_MEMFD_CREATE: u32 = 319;
+const SYSCALL_MEMFD_CREATE: u32 = 319;
 
-static MFD_CLOEXEC: u32 = 1;
-static MFD_ALLOW_SEALING: u32 = 2;
+const MFD_CLOEXEC: u32 = 1;
+const MFD_ALLOW_SEALING: u32 = 2;
+
+const F_SEAL_SEAL: u32 = 1;
+const F_SEAL_SHRINK: u32 = 2;
+const F_SEAL_GROW: u32 = 4;
+const F_SEAL_WRITE: u32 = 8;
+
+const F_LINUX_SPECIFIC_BASE: u32 = 1024;
+const F_ADD_SEALS: u32 = F_LINUX_SPECIFIC_BASE + 9;
+const F_GET_SEALS: u32 = F_LINUX_SPECIFIC_BASE + 10;
 
 unsafe fn memfd_create(name: *const u8, flags: u32) -> i32 {
     let mut fd: i32;
@@ -33,13 +43,13 @@ struct ShmBuffer {
 }
 
 impl ShmBuffer {
-    pub fn new() -> ShmBuffer {
+    pub fn create(width: i32, height: i32) -> IoResult<ShmBuffer> {
         unsafe {
             let name = b"rust-wayland-shm\x00";
             let fd = memfd_create(name.as_ptr(), MFD_CLOEXEC | MFD_ALLOW_SEALING);
-            assert!(fd >= 0);
-            let width = 300i32;
-            let height = 200i32;
+            if fd < 0 {
+                return Err(IoError::last_error());
+            }
             let capacity = width as uint
                 * height as uint
                 * std::mem::size_of::<u32>();
@@ -61,13 +71,13 @@ impl ShmBuffer {
                     }
                 }
             }
-            ShmBuffer {
+            Ok(ShmBuffer {
                 fd: fd,
                 ptr: ptr,
                 width: width,
                 height: height,
                 capacity: capacity,
-            }
+            })
         }
     }
     pub fn resize(&mut self, width: i32, height: i32) {
@@ -105,7 +115,7 @@ fn main() {
     let mut shell_surface = registry.shell().get_shell_surface(&mut surface);
     shell_surface.set_toplevel();
     // Create the buffer
-    let mut shm_buffer = ShmBuffer::new();
+    let mut shm_buffer = ShmBuffer::create(300, 200).unwrap();
     shm_buffer.resize(300, 200);
     let mut pool = registry.shm().create_pool(shm_buffer.fd(),
                                               shm_buffer.capacity() as i32);
