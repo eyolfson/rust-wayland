@@ -7,6 +7,7 @@ extern crate wayland;
 extern crate libc;
 
 use std::ptr;
+use std::fmt::{Formatter, Show};
 use std::io::{IoError, IoResult};
 
 const SYSCALL_MEMFD_CREATE: u32 = 319;
@@ -23,15 +24,35 @@ const F_LINUX_SPECIFIC_BASE: u32 = 1024;
 const F_ADD_SEALS: u32 = F_LINUX_SPECIFIC_BASE + 9;
 const F_GET_SEALS: u32 = F_LINUX_SPECIFIC_BASE + 10;
 
-unsafe fn memfd_create(name: *const u8, flags: u32) -> i32 {
-    let mut fd: i32;
-    asm!("syscall"
-        : "={rax}"(fd)
-        : "{rax}"(SYSCALL_MEMFD_CREATE), "{rdi}"(name), "{rsi}"(flags)
-        : "rcx", "r11", "memory"
-        : "volatile"
-    );
-    fd
+const MAP_SHARED: i32 = 1;
+
+#[deriving(Show)]
+struct LinuxError {
+    pub desc: &'static str,
+}
+
+struct MemFd {
+    pub index: i32
+}
+
+impl MemFd {
+    pub fn create(name: &[u8], flags: u32) -> Result<MemFd, LinuxError> {
+        let mut index: i32;
+        unsafe {
+            asm!("syscall"
+                : "={rax}"(index)
+                : "{rax}"(SYSCALL_MEMFD_CREATE), "{rdi}"(name.as_ptr()), "{rsi}"(flags)
+                : "rcx", "r11", "memory"
+                : "volatile"
+            );
+        }
+        if index >= 0 {
+            Ok(MemFd{index: index})
+        }
+        else {
+            Err(LinuxError{desc: "Function not implemented"})
+        }
+    }
 }
 
 struct ShmBuffer {
@@ -43,19 +64,21 @@ struct ShmBuffer {
 }
 
 impl ShmBuffer {
-    pub fn create(width: i32, height: i32) -> IoResult<ShmBuffer> {
+    pub fn create(width: i32, height: i32) -> ShmBuffer {
         unsafe {
             let name = b"rust-wayland-shm\x00";
-            let fd = memfd_create(name.as_ptr(), MFD_CLOEXEC | MFD_ALLOW_SEALING);
-            if fd < 0 {
-                return Err(IoError::last_error());
-            }
+            let fd = MemFd::create(name, MFD_CLOEXEC | MFD_ALLOW_SEALING)
+                         .unwrap();
             let capacity = width as uint
                 * height as uint
                 * std::mem::size_of::<u32>();
-            assert!(libc::ftruncate(fd, capacity as i64) != -1);
-            let ptr = libc::mmap(ptr::null_mut(), capacity as u64,
-                                 libc::PROT_WRITE | libc::PROT_READ, 1, fd, 0);
+            assert!(libc::ftruncate(fd.index, capacity as i64) != -1);
+            let ptr = libc::mmap(ptr::null_mut(),
+                                 capacity as u64,
+                                 libc::PROT_WRITE | libc::PROT_READ,
+                                 MAP_SHARED,
+                                 fd.index,
+                                 0);
             assert!(ptr != libc::MAP_FAILED);
             for i in range(0, width * height) {
                 let p: *mut u32 = (ptr as *mut u32).offset(i as int);
@@ -71,13 +94,13 @@ impl ShmBuffer {
                     }
                 }
             }
-            Ok(ShmBuffer {
-                fd: fd,
+            ShmBuffer {
+                fd: fd.index,
                 ptr: ptr,
                 width: width,
                 height: height,
                 capacity: capacity,
-            })
+            }
         }
     }
     pub fn resize(&mut self, width: i32, height: i32) {
@@ -115,7 +138,7 @@ fn main() {
     let mut shell_surface = registry.shell().get_shell_surface(&mut surface);
     shell_surface.set_toplevel();
     // Create the buffer
-    let mut shm_buffer = ShmBuffer::create(300, 200).unwrap();
+    let mut shm_buffer = ShmBuffer::create(300, 200);
     shm_buffer.resize(300, 200);
     let mut pool = registry.shm().create_pool(shm_buffer.fd(),
                                               shm_buffer.capacity() as i32);
