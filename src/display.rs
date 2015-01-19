@@ -1,5 +1,6 @@
 // Copyright 2014 Jonathan Eyolfson
 
+use std::ffi;
 use std::ptr;
 
 use raw;
@@ -17,7 +18,7 @@ impl Display {
         }
     }
     pub fn connect(name: &str) -> Display {
-        let c_str = name.to_c_str();
+        let c_str = ffi::CString::from_slice(name.as_bytes());
         unsafe {
             let ptr = raw::wl_display_connect(c_str.as_ptr());
             assert!(!ptr.is_null(), "wl_display_connect failed");

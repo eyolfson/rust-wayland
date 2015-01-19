@@ -18,20 +18,6 @@ pub const WL_SURFACE_COMMIT: uint32_t = 6;
 pub const WL_SURFACE_SET_BUFFER_TRANSFORM: uint32_t = 7;
 pub const WL_SURFACE_SET_BUFFER_SCALE: uint32_t = 8;
 
-#[repr(C)]
-pub struct wl_surface_listener {
-    pub enter: extern fn(
-        data: *mut c_void,
-        wl_surface: *mut objects::wl_surface,
-        output: *mut objects::wl_output
-    ),
-    pub leave: extern fn(
-        data: *mut c_void,
-        wl_surface: *mut objects::wl_surface,
-        output: *mut objects::wl_output
-    )
-}
-
 #[inline(always)]
 pub unsafe fn wl_surface_add_listener(
     wl_surface: *mut objects::wl_surface,

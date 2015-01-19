@@ -17,26 +17,6 @@ pub const WL_SHELL_SURFACE_SET_MAXIMIZED: uint32_t = 7;
 pub const WL_SHELL_SURFACE_SET_TITLE: uint32_t = 8;
 pub const WL_SHELL_SURFACE_SET_CLASS: uint32_t = 9;
 
-#[repr(C)]
-pub struct wl_shell_surface_listener {
-    pub ping: extern fn(
-        data: *mut c_void,
-        wl_shell_surface: *mut objects::wl_shell_surface,
-        serial: uint32_t
-    ),
-    pub configure: extern fn(
-        data: *mut c_void,
-        wl_shell_surface: *mut objects::wl_shell_surface,
-        edges: uint32_t,
-        width: int32_t,
-        height: int32_t
-    ),
-    pub popup_done: extern fn(
-        data: *mut c_void,
-        wl_shell_surface: *mut objects::wl_shell_surface
-    )
-}
-
 #[inline(always)]
 pub unsafe fn wl_shell_surface_add_listener(
     wl_shell_surface: *mut objects::wl_shell_surface,

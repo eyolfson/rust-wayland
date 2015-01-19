@@ -2,13 +2,14 @@
 
 #![feature(asm)]
 
+#![allow(dead_code)]
+#![allow(unstable)]
+
 extern crate wayland;
 
 extern crate libc;
 
 use std::ptr;
-use std::fmt::{Formatter, Show};
-use std::io::{IoError, IoResult};
 
 const SYSCALL_MEMFD_CREATE: u32 = 319;
 
@@ -26,7 +27,7 @@ const F_GET_SEALS: u32 = F_LINUX_SPECIFIC_BASE + 10;
 
 const MAP_SHARED: i32 = 1;
 
-#[deriving(Show)]
+#[derive(Show)]
 struct LinuxError {
     pub desc: &'static str,
 }
@@ -60,7 +61,7 @@ struct ShmBuffer {
     ptr: *mut libc::c_void,
     width: i32,
     height: i32,
-    capacity: uint,
+    capacity: usize,
 }
 
 impl ShmBuffer {
@@ -68,9 +69,9 @@ impl ShmBuffer {
         unsafe {
             let name = b"rust-wayland-shm\x00";
             let fd = MemFd::create(name, MFD_CLOEXEC | MFD_ALLOW_SEALING)
-                         .unwrap();
-            let capacity = width as uint
-                * height as uint
+                     .unwrap();
+            let capacity = width as usize
+                * height as usize
                 * std::mem::size_of::<u32>();
             assert!(libc::ftruncate(fd.index, capacity as i64) != -1);
             let ptr = libc::mmap(ptr::null_mut(),
@@ -81,7 +82,7 @@ impl ShmBuffer {
                                  0);
             assert!(ptr != libc::MAP_FAILED);
             for i in range(0, width * height) {
-                let p: *mut u32 = (ptr as *mut u32).offset(i as int);
+                let p: *mut u32 = (ptr as *mut u32).offset(i as isize);
                 let x = i % width;
                 let y = i / width;
                 match x {
@@ -113,7 +114,7 @@ impl ShmBuffer {
     pub fn fd(&self) -> i32 {
         self.fd
     }
-    pub fn capacity(&self) -> uint { self.capacity }
+    pub fn capacity(&self) -> usize { self.capacity }
     pub fn width(&self) -> i32 { self.width }
     pub fn height(&self) -> i32 { self.height }
     pub fn stride(&self) -> i32 {

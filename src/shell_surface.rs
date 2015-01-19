@@ -1,5 +1,6 @@
 // Copyright 2014 Jonathan Eyolfson
 
+use std::ffi;
 use std::ptr;
 
 use libc::{c_void, int32_t, uint32_t};
@@ -58,7 +59,7 @@ impl ShellSurface {
         ShellSurface { ptr: ptr }
     }
     pub fn set_title(&mut self, title: &str) {
-        let c_str = title.to_c_str();
+        let c_str = ffi::CString::from_slice(title.as_bytes());
         unsafe {
             raw::wl_shell_surface_set_title(self.ptr, c_str.as_ptr());
         }

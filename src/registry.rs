@@ -1,7 +1,8 @@
 // Copyright 2014 Jonathan Eyolfson
 
-use std::c_str;
+use std::ffi;
 use std::mem;
+use std::str;
 
 use libc::{c_char, c_void, strcmp, uint32_t};
 
@@ -79,10 +80,9 @@ extern fn global(
             );
             r.shm = Some(shm);
         }
-        let interface_c_str = c_str::CString::new(interface, false);
-        let interface_str = interface_c_str.as_str().unwrap();
+        let slice = ffi::c_str_to_bytes(&interface);
         println!("wl_registry.global name={} interface={} version={}",
-                 name, interface_str, version);
+                 name, str::from_utf8(slice).unwrap(), version);
     }
 }
 
