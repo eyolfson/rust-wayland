@@ -1,6 +1,7 @@
 // Copyright 2014 Jonathan Eyolfson
 
-#![feature(globs)]
+#![allow(missing_copy_implementations)]
+#![allow(unstable)]
 
 extern crate libc;
 
