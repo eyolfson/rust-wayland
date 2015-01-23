@@ -1,0 +1,16 @@
+\documentclass[tikz]{standalone}
+
+\usetikzlibrary{arrows}
+
+\begin{document}
+\begin{tikzpicture}[->,>=stealth',shorten >=0.5mm,node distance=3cm]
+  \tikzstyle{program} = [draw, rectangle]
+  \tikzstyle{label} = [font=\scriptsize]
+  \node [program] (S) {Server};
+  \node [program] (C) [right of=S] {Client};
+
+  \path
+    (C) edge [bend left] node [label, below] {Request} (S)
+    (S) edge [bend left] node [label, above] {Event} (C);
+\end{tikzpicture}
+\end{document}
