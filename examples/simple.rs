@@ -1,15 +1,16 @@
-// Copyright 2014 Jonathan Eyolfson
-
-#![feature(asm)]
+// Copyright 2014-2015 Jonathan Eyolfson
 
 #![allow(dead_code)]
-#![allow(unstable)]
 
-extern crate wayland;
+#![feature(asm)]
+#![feature(core)]
+#![feature(libc)]
 
 extern crate libc;
+extern crate wayland;
 
 use std::ptr;
+use wayland::old::*;
 
 const SYSCALL_MEMFD_CREATE: u32 = 319;
 
@@ -132,8 +133,8 @@ impl Drop for ShmBuffer {
 }
 
 fn main() {
-    let mut display = wayland::Display::connect_to_env_or_default();
-    let mut registry = wayland::Registry::new(&mut display);
+    let mut display = Display::connect_to_env_or_default();
+    let mut registry = Registry::new(&mut display);
     // Create the shell surface
     let mut surface = registry.compositor().create_surface();
     let mut shell_surface = registry.shell().get_shell_surface(&mut surface);

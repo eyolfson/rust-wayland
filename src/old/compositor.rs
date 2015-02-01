@@ -1,8 +1,8 @@
-// Copyright 2014 Jonathan Eyolfson
+// Copyright 2014-2015 Jonathan Eyolfson
 
 use raw;
 
-use surface::Surface;
+use super::Surface;
 
 pub struct Compositor {
     ptr: *mut raw::wl_compositor

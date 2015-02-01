@@ -1,9 +1,9 @@
-// Copyright 2014 Jonathan Eyolfson
+// Copyright 2014-2015 Jonathan Eyolfson
 
 use raw;
 
-use ShellSurface;
-use Surface;
+use super::ShellSurface;
+use super::Surface;
 
 pub struct Shell {
     ptr: *mut raw::wl_shell

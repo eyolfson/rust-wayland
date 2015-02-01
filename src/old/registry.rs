@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Eyolfson
+// Copyright 2014-2015 Jonathan Eyolfson
 
 use std::ffi;
 use std::mem;
@@ -8,11 +8,11 @@ use libc::{c_char, c_void, strcmp, uint32_t};
 
 use raw;
 
-use Compositor;
-use Display;
-use Seat;
-use Shell;
-use Shm;
+use super::Compositor;
+use super::Display;
+use super::Seat;
+use super::Shell;
+use super::Shm;
 
 pub struct Registry {
     ptr: *mut raw::wl_registry,

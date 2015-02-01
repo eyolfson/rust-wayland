@@ -1,8 +1,8 @@
-// Copyright 2014 Jonathan Eyolfson
+// Copyright 2014-2015 Jonathan Eyolfson
 
 use raw;
 
-use ShmPool;
+use super::ShmPool;
 
 pub struct Shm {
     ptr: *mut raw::wl_shm
