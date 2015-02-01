@@ -3,11 +3,13 @@
 \usetikzlibrary{arrows}
 
 \begin{document}
-\begin{tikzpicture}[grow=right,->,>=stealth',shorten >=0.5mm, level distance=5cm, sibling distance=1cm]
-  \tikzstyle{global} = [draw, rectangle]
-  \node {wl\_display}
+\begin{tikzpicture}[->,>=stealth',shorten >=0.5mm,grow=right,
+                    level distance=5cm,sibling distance=1cm]
+  \tikzstyle{core} = [draw, rectangle, fill=blue!50]
+  \tikzstyle{global} = [draw, rectangle, fill=green!50]
+  \node [core] {wl\_display}
     child {
-      node {wl\_registry}
+      node [core] {wl\_registry}
         child {
           node [global] {wl\_compositor}
             child {
